@@ -1,4 +1,4 @@
-#Simple MMO server using Boost.Asio
+## Simple MMO server using Boost.Asio
 
 To build:
 `$ mkdir build`

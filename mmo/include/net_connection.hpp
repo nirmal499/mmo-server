@@ -4,6 +4,13 @@
 #include "net_tsqueue.hpp"
 #include "net_message.hpp"
 
+#include <cstdint>
+
+// User-defined literal operator for uint64_t
+uint64_t operator""_u64(const char* str, size_t) {
+    return std::stoull(str, nullptr, 16);
+}
+
 namespace olc{
     namespace net{
 
@@ -117,7 +124,7 @@ namespace olc{
                 return m_socket.is_open();
             }
 
-            void connectToClient(int IDofClient){
+            void connectToClient(olc::net::server_interface<T>* server,int IDofClient){
                 if(m_OwnerType == owner::server){
                     if(m_socket.is_open()){
                         id = IDofClient;
@@ -253,10 +260,10 @@ namespace olc{
 
             // Our function for validation
             uint64_t scramble(uint64_t nInput){
-                uint64_t out = nInput ^ 0xIAMDEADFROMINSIDE;
+                uint64_t out = nInput ^ "0xIAMDEADFROMINSIDE"_u64;
 
-                out = (out & 0xYOUWILLDIEALONE) >> 4 | (out & 0xDEALWITHITYOUDESERVERIT) << 4;
-                return out ^ 0xUSELESSPEICEOFCRAP;
+                out = (out & "0xYOUWILLDIEALONE"_u64) >> 4 | (out & "0xDEALWITHITYOUDESERVERIT"_u64) << 4;
+                return out ^ "0xUSELESSPEICEOFCRAP"_u64;
             }
 
             // ASYNC - Used by both client and server to write validation packet
@@ -281,7 +288,7 @@ namespace olc{
             // ASYNC -
             void readValidation(olc::net::server_interface<T>* server = nullptr){
                 asio::async_read(m_socket,asio::buffer(&m_handshakein,sizeof(uint64_t)),
-                                 [this](boost::system::error_code ec,std::size_t length){
+                                 [this, server](boost::system::error_code ec,std::size_t length){
                                      if(!ec){
                                          if(m_OwnerType == owner::server){
                                              if(m_handshakein == m_handshakecheck){

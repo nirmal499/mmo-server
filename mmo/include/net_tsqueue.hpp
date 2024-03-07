@@ -7,7 +7,7 @@ namespace olc{
         class tsqueue{
 
         protected:
-            std::mutex muxQueue;
+            // std::mutex muxQueue;
             std::deque<T> deQueue;
             std::condition_variable cv;
             std::mutex mux;
@@ -21,50 +21,57 @@ namespace olc{
 
         public:
             const T& front(){
-                std::scoped_lock lock(muxQueue);
+                std::scoped_lock lock(mux);
                 return deQueue.front();
             }
 
             const T& back(){
-                std::scoped_lock lock(muxQueue);
+                std::scoped_lock lock(mux);
                 return deQueue.back();
             }
 
             // It might take the ownership of item
-            void push_back(const T& item){
-                std::scoped_lock lock(muxQueue);
-                deQueue.emplace_back(std::move(item));
+            template<typename U>
+            void push_back(U&& item){
 
-                // std::cout << "Data Pushed Start\n";
-                std::unique_lock<std::mutex> ul(mux);
+                {
+                    std::unique_lock<std::mutex> ul(mux);
+                    deQueue.emplace_back(std::forward<U>(item));
+                }
+                
                 cv.notify_one(); // Notifies using condition variable that item is available to be consumed
-                // std::cout << "Data Pushed DONE\n";
-
             }
 
             // It might take the ownership of item
-            void push_front(const T& item){
-                std::scoped_lock lock(muxQueue);
-                deQueue.emplace_front(std::move(item));
+            template<typename U>
+            void push_front(U&& item){
+                {
+                    std::unique_lock<std::mutex> ul(mux);
+                    deQueue.emplace_front(std::forward<U>(item));
+                }
 
-                std::unique_lock<std::mutex> ul(mux);
                 cv.notify_one(); // Notifies using condition variable that item is available to be consumed
             }
 
             // Returns no.of items in Queue
             std::size_t count(){
-                std::scoped_lock lock(muxQueue);
+                std::scoped_lock lock(mux);
                 return deQueue.size();
             }
 
             // Clears Queue
             void clear(){
-                std::scoped_lock lock(muxQueue);
+                std::scoped_lock lock(mux);
                 deQueue.clear();
             }
 
             T pop_front(){
-                std::scoped_lock lock(muxQueue);
+                std::unique_lock<std::mutex> gaurd{mux};
+
+                cv.wait(gaurd, [&](){
+                    return !deQueue.empty();
+                }); /* wait till deQueue is not empty */
+
                 auto t = std::move(deQueue.front());
                 deQueue.pop_front();
 
@@ -72,10 +79,11 @@ namespace olc{
             }
 
             bool empty(){
-                std::scoped_lock lock(muxQueue);
+                std::scoped_lock lock(mux);
                 return deQueue.empty();
             }
 
+            /*
             void wait(){
                 // wait for item to be available in the queue
                 // while loop is to prevent spurious wake
@@ -84,6 +92,7 @@ namespace olc{
                     cv.wait(ul);
                 }
             }
+            */
 
         };
     }

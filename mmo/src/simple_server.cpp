@@ -58,7 +58,7 @@ int main(){
     server.start();
 
     while(1){
-        server.update(-1,true);
+        server.update();
     }
 
 

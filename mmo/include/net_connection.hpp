@@ -262,11 +262,12 @@ namespace olc{
             }
 
             void addToIncomingMsgQ(){
+                /* specifying "olc::net::owned_message<T>" is IMP becoz we are using uvref{forward} in push_back */
                 if(m_OwnerType == owner::server){
                     // We are constructing owned_message while pushing
-                    m_qmessages_in.push_back({ this->shared_from_this() , m_temp });
+                    m_qmessages_in.push_back(olc::net::owned_message<T>{ this->shared_from_this() , m_temp });
                 }else{
-                    m_qmessages_in.push_back({ nullptr , m_temp });
+                    m_qmessages_in.push_back(olc::net::owned_message<T>{ nullptr , m_temp });
                 }
 
                 readHeader();

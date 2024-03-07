@@ -140,12 +140,16 @@ namespace olc{
 
             // This function gives client the ability to handle specific no.of messages
             // Force server to respond to incoming messages
-            void update(std::size_t nMaxMessages = -1,bool wait = false){
-                if(wait){
-                    // std::cout << "Waiting START\n";
-                    m_qmessages_in.wait(); // wait for the item to be pushed in the queue
-                    // std::cout << "Waiting DONE\n";
-                }
+            void update(std::size_t nMaxMessages = -1){
+                /* No need to wait becoz we are apply condition variable in tsqueue for waiting during pop_front() */
+                
+                /*
+                    if(wait){
+                        // std::cout << "Waiting START\n";
+                        m_qmessages_in.wait(); // wait for the item to be pushed in the queue
+                        // std::cout << "Waiting DONE\n";
+                    }
+                */
 
                 // Setting nMaxMessages to maximum number becoz it a unsigned variable
 

@@ -34,9 +34,6 @@ namespace olc{
             // Each connection has a unique socket to a remote
             asio::ip::tcp::socket m_socket;
 
-            // Container of active validated connections
-            std::deque<std::shared_ptr<connection<T>>> m_dequeConnections;
-
             // This io_service is shared with the whole asio instance for connection
             // In case of server this asio instance will be shared among all the connection
             // In case of client, each client will have one connection
@@ -169,18 +166,17 @@ namespace olc{
                                  [this](system::error_code ec,std::size_t length){
                                      if(!ec){
                                          if(m_temp.header.size > 0){
-                                             // Here the header size if not 0.
-                                             // Header size represents the size of the message body
+                                            // message_header size attribute represents the size of the size of message body
 
-                                             // Allocate enough space for message body
-                                             m_temp.body.resize(m_temp.header.size);
+                                            // Allocate enough space for message body
+                                             m_temp.body.resize(m_temp.header.size); // This resized value is IMP for "readBody()"
 
                                              readBody();
                                          }
                                          else{
-                                             // Here m_temp.header.size is 0
-                                             // We m_temp.header.size denotes the size of the msg body
-                                             // We can have msg which have NO body e.g CustomMsgTypes::ServerAccept
+                                            // Here m_temp.header.size is 0 BYTES
+                                            // m_temp.header.size denotes the size of the msg body
+                                            // We can have msg which have NO body e.g CustomMsgTypes::ServerAccept
                                              addToIncomingMsgQ();
                                          }
                                      }else{
@@ -205,46 +201,64 @@ namespace olc{
 
             // ASYNC - write a message header
             void writeHeader(){
-                asio::async_write(m_socket,asio::buffer(
-                                                        &m_qmessages_out.front().header,
-                                                        sizeof(message_header<T>)),
-                                  [this](system::error_code ec,std::size_t length){
-                    if(!ec){
-                        // writeBody();
-                        if(m_qmessages_out.front().body.size() > 0){
-                            writeBody();
-                        }else{
 
-                            // Here the msg body is 0
-                            // We can have a msg which have NO body e.g CustomMsgTypes::ServerAccept
-                            m_qmessages_out.pop_front();
-                            if(!m_qmessages_out.empty()){
+                if(!m_qmessages_out.empty()){
+                        asio::async_write(m_socket,asio::buffer(
+                                                            &m_qmessages_out.front().header,
+                                                            sizeof(message_header<T>)),
+                                    [this](system::error_code ec,std::size_t length){
+                        if(!ec){
+                            if(m_qmessages_out.front().header.size > 0){
+                                /* We have a message body */
+                                writeBody();
+                            }else{
+
+                                // Here the size of msg body is 0
+                                // We can have a msg which have NO body e.g CustomMsgTypes::ServerAccept
+
+                                /*
+                                    m_qmessages_out.pop_front();
+                                    if(!m_qmessages_out.empty()){
+                                        writeHeader();
+                                    }
+                                */
+
+                                m_qmessages_out.pop_front();
                                 writeHeader();
                             }
+                        }else{
+                            std::cout << "[" << id << "] Write Header Fail\n";
+                            m_socket.close();
                         }
-                    }else{
-                        std::cout << "[" << id << "] Write Header Fail\n";
-                        m_socket.close();
-                    }
-                });
+                    });
+                }
             }
 
             // ASYNC - write a message body
             void writeBody(){
-                asio::async_write(m_socket,asio::buffer(
-                                                        m_qmessages_out.front().body.data(),
-                                                        m_qmessages_out.front().body.size()),
-                                  [this](system::error_code ec,std::size_t length){
-                    if(!ec){
-                        m_qmessages_out.pop_front();
-                        if(!m_qmessages_out.empty()){
+
+                if(!m_qmessages_out.empty()){
+                        asio::async_write(m_socket,asio::buffer(
+                                                            m_qmessages_out.front().body.data(),
+                                                            m_qmessages_out.front().body.size()),
+                                    [this](system::error_code ec,std::size_t length){
+                        if(!ec){
+                            
+                            /*
+                                m_qmessages_out.pop_front();
+                                if(!m_qmessages_out.empty()){
+                                    writeHeader();
+                                }
+                            */
+
+                            m_qmessages_out.pop_front();
                             writeHeader();
+                        }else{
+                            std::cout << "[" << id << "] Write Body Fail\n";
+                            m_socket.close();
                         }
-                    }else{
-                        std::cout << "[" << id << "] Wite Body Fail\n";
-                        m_socket.close();
-                    }
-                });
+                    });
+                }
             }
 
             void addToIncomingMsgQ(){

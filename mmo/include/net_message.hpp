@@ -3,8 +3,7 @@
 
 namespace olc{
     namespace net{
-        // Message Header is sent at the start of all the messages. The size will indicate the size of the message overall (msg header + msg)
-
+        // Message Header is sent at the start of all the messages. The size attribute will indicate the size of the message body
         template<typename T>
         struct message_header{
             T id{};
@@ -43,7 +42,6 @@ namespace olc{
                 std::memcpy(msg.body.data()+i,&data,sizeof(DataType));
 
                 // Recalculate the message size
-                // msg.header.size = msg.size();
                 msg.header.size = msg.body.size();
 
                 return msg;
@@ -66,7 +64,6 @@ namespace olc{
                 msg.body.resize(i);
 
                 // Recalculate the message size
-                // msg.header.size = msg.size();
                 msg.header.size = msg.body.size();
 
                 return msg;

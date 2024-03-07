@@ -9,14 +9,6 @@ namespace olc{
     namespace net{
         template<typename T>
         class client_interface{
-        public:
-            client_interface(): m_socket(m_ios){
-                // Initialise the socket with the io_service
-            }
-            virtual ~client_interface(){
-                // If the client is destroyed always try to disconnect from the server
-                disconnect();
-            }
         protected:
 
             // asio io_service handles the data transfer and for every client it will have it own io_service. It will not be shared like connection class
@@ -28,8 +20,22 @@ namespace olc{
 
             // The client has a single instance of a "connection" object, which handles data transfer
             std::unique_ptr<connection<T>> m_conn;
+        
+        private:
+
+            // Thread safe queue of incoming messages from the server
+            tsqueue<owned_message<T>> m_qmessages_in;
 
         public:
+            client_interface(): m_socket(m_ios){
+                // Initialise the socket with the io_service
+            }
+            
+            virtual ~client_interface(){
+                // If the client is destroyed always try to disconnect from the server
+                disconnect();
+            }
+
             // Connect to server with hostname/ip-address and port
             bool connect(const std::string& host, const uint16_t port){
                 try{
@@ -100,10 +106,6 @@ namespace olc{
                     m_conn->send(msg);
                 }
             }
-        private:
-
-            // Thread safe queue of incoming messages from the server
-            tsqueue<owned_message<T>> m_qmessages_in;
         };
     }
 }

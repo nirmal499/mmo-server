@@ -2,20 +2,7 @@ cmake_minimum_required(VERSION 3.22.1)
 
 project(mmo_project)
 
-# set(Boost_USE_STATIC_LIBS ON)
-
-# https://stackoverflow.com/questions/33091417/could-not-find-the-following-boost-libraries-boost-asio
-
-# find_package(Boost 1.54 REQUIRED COMPONENTS asio)
-
-if(Boost_USE_STATIC_LIBS)
-   message(STATUS "Linking against boost static libraries")
-else()
-   message(STATUS "Linking against boost dynamic libraries")
-endif()
-
-# add_executable(main src/main.cpp)
+set(Boost_ROOT "/home/nbaskey/my_opt/boost_libs/boost_1_84_0/")
+find_package(Boost 1.84 REQUIRED COMPONENTS)
 
 add_subdirectory(mmo)
-
-# target_link_libraries(main PUBLIC Boost::asio)
